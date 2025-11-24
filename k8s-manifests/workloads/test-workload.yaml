@@ -1,0 +1,47 @@
+---
+# Test workload that uses custom schedulers
+# You can modify the schedulerName field to test different schedulers
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-workload
+  namespace: default
+  labels:
+    app: test-workload
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test-workload
+  template:
+    metadata:
+      labels:
+        app: test-workload
+    spec:
+      schedulerName: greedylb-scheduler  # Change to refinelb-scheduler to test RefineLB
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-workload
+  namespace: default
+spec:
+  selector:
+    app: test-workload
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP

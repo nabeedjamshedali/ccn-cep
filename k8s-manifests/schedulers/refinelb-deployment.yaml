@@ -6,7 +6,6 @@ metadata:
   namespace: kube-system
   labels:
     app: refinelb-scheduler
-    component: scheduler
 spec:
   replicas: 1
   selector:
@@ -16,13 +15,14 @@ spec:
     metadata:
       labels:
         app: refinelb-scheduler
-        component: scheduler
     spec:
       serviceAccountName: custom-scheduler
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
       containers:
         - name: scheduler
           image: refinelb-scheduler:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           resources:
             requests:
               cpu: "100m"
@@ -33,31 +33,7 @@ spec:
           env:
             - name: SCHEDULER_NAME
               value: "refinelb-scheduler"
-          livenessProbe:
-            exec:
-              command:
-                - python
-                - "-c"
-                - "import sys; sys.exit(0)"
-            initialDelaySeconds: 15
-            periodSeconds: 20
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            exec:
-              command:
-                - python
-                - "-c"
-                - "import sys; sys.exit(0)"
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-      restartPolicy: Always
       tolerations:
         - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
-        - key: node-role.kubernetes.io/master
           operator: Exists
           effect: NoSchedule

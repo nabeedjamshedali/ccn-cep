@@ -64,7 +64,7 @@ if ! command_exists minikube; then
     print_info "Installing Minikube..."
     curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     sudo install minikube-linux-amd64 /usr/local/bin/minikube
-    rm minikube-linux-amd64
+    rm -f minikube-linux-amd64
     print_success "Minikube installed"
 fi
 print_success "Minikube found: $(minikube version --short)"
@@ -80,16 +80,8 @@ print_header "Setting up Minikube Cluster"
 
 if minikube status >/dev/null 2>&1; then
     print_info "Minikube is already running"
-    read -p "Do you want to delete and recreate the cluster? (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_info "Deleting existing Minikube cluster..."
-        minikube delete
-        print_success "Cluster deleted"
-    fi
-fi
-
-if ! minikube status >/dev/null 2>&1; then
+    print_success "Using existing Minikube cluster"
+else
     print_info "Starting Minikube cluster..."
     print_info "Configuration: 3 nodes, 4 CPUs, 6GB RAM"
 
@@ -101,8 +93,6 @@ if ! minikube status >/dev/null 2>&1; then
         --kubernetes-version=stable
 
     print_success "Minikube cluster started"
-else
-    print_success "Using existing Minikube cluster"
 fi
 
 # 3. Verify cluster
@@ -110,27 +100,26 @@ print_info "Verifying cluster..."
 kubectl get nodes
 print_success "Cluster is ready with $(kubectl get nodes --no-headers | wc -l) nodes"
 
-# 4. Build Docker images
+# 4. Build Docker images using minikube image build (multi-node compatible)
 print_header "Building Docker Images"
 
 cd "$(dirname "$0")/.."
 
 print_info "Building GreedyLB Scheduler image..."
-eval $(minikube docker-env)
-docker build -t greedylb-scheduler:latest ./schedulers/greedylb/
+minikube image build -t greedylb-scheduler:latest ./schedulers/greedylb/
 print_success "GreedyLB Scheduler image built"
 
 print_info "Building RefineLB Scheduler image..."
-docker build -t refinelb-scheduler:latest ./schedulers/refinelb/
+minikube image build -t refinelb-scheduler:latest ./schedulers/refinelb/
 print_success "RefineLB Scheduler image built"
 
 print_info "Building Pattern Detector image..."
-docker build -t pattern-detector:latest ./monitoring/
+minikube image build -t pattern-detector:latest ./monitoring/
 print_success "Pattern Detector image built"
 
 # Verify images
 print_info "Docker images:"
-docker images | grep -E "greedylb-scheduler|refinelb-scheduler|pattern-detector"
+minikube image ls | grep -E "greedylb|refinelb|pattern" || true
 
 # 5. Create namespace if needed
 print_header "Configuring Kubernetes Resources"

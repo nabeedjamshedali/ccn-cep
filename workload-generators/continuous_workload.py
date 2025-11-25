@@ -164,7 +164,7 @@ class ContinuousWorkloadGenerator:
         logger.info("PHASE 3: Exponential Burst (RefineLB expected)")
         logger.info("=" * 70)
 
-        exponential_stages = [5, 10, 20, 40]
+        exponential_stages = [2, 4, 8, 16, 32, 64]
         for i, replicas in enumerate(exponential_stages, 1):
             logger.info(f"\nExponential Step {i}/{len(exponential_stages)}: Scaling to {replicas} pod(s)")
             self.scale_deployment(replicas)

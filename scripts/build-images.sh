@@ -2,6 +2,7 @@
 ###############################################################################
 # Docker Image Build Script
 # Builds all Docker images for the system
+# Uses minikube image build for multi-node cluster compatibility
 ###############################################################################
 
 set -e
@@ -29,34 +30,23 @@ cd "$(dirname "$0")/.."
 
 print_header "Building Docker Images"
 
-# Set Docker environment to use Minikube's Docker daemon
-print_info "Configuring Docker environment for Minikube..."
-eval $(minikube docker-env)
-print_success "Docker environment configured"
-
-# Build GreedyLB Scheduler
+# Build GreedyLB Scheduler using minikube image build (multi-node compatible)
 print_info "Building GreedyLB Scheduler image..."
-docker build -t greedylb-scheduler:latest \
-    -f schedulers/greedylb/Dockerfile \
-    schedulers/greedylb/
+minikube image build -t greedylb-scheduler:latest schedulers/greedylb/
 print_success "GreedyLB Scheduler image built"
 
 # Build RefineLB Scheduler
 print_info "Building RefineLB Scheduler image..."
-docker build -t refinelb-scheduler:latest \
-    -f schedulers/refinelb/Dockerfile \
-    schedulers/refinelb/
+minikube image build -t refinelb-scheduler:latest schedulers/refinelb/
 print_success "RefineLB Scheduler image built"
 
 # Build Pattern Detector
 print_info "Building Pattern Detector image..."
-docker build -t pattern-detector:latest \
-    -f monitoring/Dockerfile \
-    monitoring/
+minikube image build -t pattern-detector:latest monitoring/
 print_success "Pattern Detector image built"
 
 # Verify images
 print_header "Verifying Built Images"
-docker images | grep -E "IMAGE|greedylb-scheduler|refinelb-scheduler|pattern-detector"
+minikube image ls | grep -E "greedylb|refinelb|pattern" || true
 
 print_success "All images built successfully!"
